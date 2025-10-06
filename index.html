@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KOL 貼文定價計算機</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #9333ea;
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #9333ea;
+            cursor: pointer;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Lucide Icons as SVG components
+        const Calculator = () => (
+            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect width="16" height="20" x="4" y="2" rx="2"/>
+                <line x1="8" x2="16" y1="6" y2="6"/>
+                <line x1="16" x2="16" y1="14" y2="14"/>
+                <path d="M16 10h.01M12 10h.01M8 10h.01M12 14h.01M8 14h.01M8 18h.01M12 18h.01M16 18h.01"/>
+            </svg>
+        );
+
+        const Users = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+        );
+
+        const TrendingUp = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+                <polyline points="16 7 22 7 22 13"/>
+            </svg>
+        );
+
+        const Heart = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            </svg>
+        );
+
+        const MessageCircle = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
+            </svg>
+        );
+
+        const Share2 = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="18" cy="5" r="3"/>
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/>
+                <line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>
+            </svg>
+        );
+
+        const Bookmark = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+            </svg>
+        );
+
+        const Clock = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+        );
+
+        const FileImage = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <circle cx="10" cy="13" r="2"/>
+                <path d="m20 17-1.09-1.09a2 2 0 0 0-2.82 0L10 22"/>
+            </svg>
+        );
+
+        function KOLPricingCalculator() {
+            const [followers, setFollowers] = useState(50000);
+            const [reachRate, setReachRate] = useState(12);
+            const [engagementRate, setEngagementRate] = useState(3.5);
+            const [avgLikes, setAvgLikes] = useState(150);
+            const [avgComments, setAvgComments] = useState(40);
+            const [avgShares, setAvgShares] = useState(15);
+            const [avgSaves, setAvgSaves] = useState(5);
+            const [productionHours, setProductionHours] = useState(8);
+            const [hourlyRate, setHourlyRate] = useState(800);
+            const [profitMargin, setProfitMargin] = useState(50);
+            const [industry, setIndustry] = useState('beauty');
+            const [contentType, setContentType] = useState('post');
+            const [authorizationWeeks, setAuthorizationWeeks] = useState(0);
+            const [weeklyAuthFee, setWeeklyAuthFee] = useState(1000);
+            const [materialRights, setMaterialRights] = useState(false);
+            const [materialRightsFee, setMaterialRightsFee] = useState(5000);
+
+            const industryCPM = {
+                lifestyle: { name: '生活風格/美妝', cpm: 1200, multiplier: 1.0 },
+                beauty: { name: '美妝保養', cpm: 1200, multiplier: 1.2 },
+                food: { name: '美食旅遊', cpm: 900, multiplier: 0.9 },
+                tech: { name: '科技/3C', cpm: 1500, multiplier: 1.3 },
+                fashion: { name: '時尚精品', cpm: 2000, multiplier: 1.8 },
+                parent: { name: '親子/教育', cpm: 1000, multiplier: 1.1 },
+                finance: { name: '金融保險', cpm: 1800, multiplier: 2.0 },
+                health: { name: '保健食品', cpm: 1800, multiplier: 3.0 },
+            };
+
+            const contentMultiplier = {
+                post: { name: '靜態貼文', multiplier: 1.0 },
+                carousel: { name: '輪播圖', multiplier: 1.3 },
+                reels: { name: 'Reels/短影片', multiplier: 1.8 },
+                video: { name: '長影片', multiplier: 2.5 },
+                story: { name: 'Story (24hr)', multiplier: 0.4 },
+                storyHighlight: { name: 'Story + 精選', multiplier: 0.8 },
+                live: { name: '直播', multiplier: 4.0 },
+            };
+
+            const [results, setResults] = useState({
+                cpmPrice: 0,
+                engagementPrice: 0,
+                costPrice: 0,
+                recommendedPrice: 0,
+                finalPrice: 0,
+                authorizationFee: 0,
+                materialRightsFee: 0,
+                totalPrice: 0
+            });
+
+            useEffect(() => {
+                calculatePricing();
+            }, [followers, reachRate, engagementRate, avgLikes, avgComments, avgShares, avgSaves,
+                productionHours, hourlyRate, profitMargin, industry, contentType,
+                authorizationWeeks, weeklyAuthFee, materialRights, materialRightsFee]);
+
+            const calculatePricing = () => {
+                const avgReach = followers * (reachRate / 100);
+                const cpmBase = (avgReach / 1000) * industryCPM[industry].cpm;
+                const cpmPrice = Math.round(cpmBase);
+
+                const engagementPrice = Math.round(
+                    (avgLikes * 10) +
+                    (avgComments * 30) +
+                    (avgShares * 30) +
+                    (avgSaves * 30)
+                );
+
+                const baseCost = productionHours * hourlyRate;
+                const costPrice = Math.round(baseCost * (1 + profitMargin / 100));
+
+                const recommendedBase = Math.round((cpmPrice * 0.5 + engagementPrice * 0.2 + costPrice * 0.3));
+                const recommendedPrice = Math.round(recommendedBase * industryCPM[industry].multiplier);
+
+                const finalPrice = Math.round(recommendedPrice * contentMultiplier[contentType].multiplier);
+
+                let authorizationFee = 0;
+                if (authorizationWeeks > 0) {
+                    if (authorizationWeeks > 52) {
+                        authorizationFee = Math.round(finalPrice * 2);
+                    } else {
+                        authorizationFee = authorizationWeeks * weeklyAuthFee;
+                    }
+                }
+
+                const materialFee = materialRights ? materialRightsFee : 0;
+                const totalPrice = finalPrice + authorizationFee + materialFee;
+
+                setResults({
+                    cpmPrice,
+                    engagementPrice,
+                    costPrice,
+                    recommendedPrice,
+                    finalPrice,
+                    authorizationFee,
+                    materialRightsFee: materialFee,
+                    totalPrice
+                });
+            };
+
+            const formatNumber = (num) => {
+                return new Intl.NumberFormat('zh-TW', {
+                    style: 'currency',
+                    currency: 'TWD',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(num);
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-6">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="text-center mb-8">
+                            <div className="flex items-center justify-center gap-3 mb-4">
+                                <div className="text-purple-600">
+                                    <Calculator />
+                                </div>
+                                <h1 className="text-4xl font-bold text-gray-800">KOL 貼文定價計算機</h1>
+                            </div>
+                            <p className="text-gray-600">數據化你的影響力價值</p>
+                        </div>
+
+                        <div className="grid lg:grid-cols-3 gap-6">
+                            <div className="lg:col-span-2 space-y-6">
+                                <div className="bg-white rounded-2xl shadow-lg p-6">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Users className="w-5 h-5 text-purple-600" />
+                                        <h2 className="text-xl font-bold text-gray-800">基礎數據</h2>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                總粉絲數: {followers.toLocaleString()}
+                                            </label>
+                                            <input
+                                                type="range"
+                                                min="1000"
+                                                max="1000000"
+                                                step="1000"
+                                                value={followers}
+                                                onChange={(e) => setFollowers(Number(e.target.value))}
+                                                className="w-full h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer"
+                                            />
+                                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                                <span>1K</span>
+                                                <span>1M</span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                平均觸及率: {reachRate}%
+                                                <span className="text-xs text-gray-500 ml-2">(觸及人數 ≈ {Math.round(followers * reachRate / 100).toLocaleString()})</span>
+                                            </label>
+                                            <input
+                                                type="range"
+                                                min="1"
+                                                max="50"
+                                                step="0.5"
+                                                value={reachRate}
+                                                onChange={(e) => setReachRate(Number(e.target.value))}
+                                                className="w-full h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer"
+                                            />
+                                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                                <span>1%</span>
+                                                <span>50%</span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                平均互動率: {engagementRate}%
+                                            </label>
+                                            <input
+                                                type="range"
+                                                min="0.5"
+                                                max="20"
+                                                step="0.1"
+                                                value={engagementRate}
+                                                onChange={(e) => setEngagementRate(Number(e.target.value))}
+                                                className="w-full h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer"
+                                            />
+                                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                                <span>0.5%</span>
+                                                <span>20%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-2xl shadow-lg p-6">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <TrendingUp className="w-5 h-5 text-pink-600" />
+                                        <h2 className="text-xl font-bold text-gray-800">平均互動數據</h2>
+                                    </div>
+
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                                <Heart className="w-4 h-4 text-red-500" />
+                                                按讚數
+                                            </label>
+                                            <input
+                                                type="number"
+                                                value={avgLikes}
+                                                onChange={(e) => setAvgLikes(Number(e.target.value))}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                                <MessageCircle className="w-4 h-4 text-blue-500" />
+                                                留言數
+                                            </label>
+                                            <input
+                                                type="number"
+                                                value={avgComments}
+                                                onChange={(e) => setAvgComments(Number(e.target.value))}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                                <Share2 className="w-4 h-4 text-green-500" />
+                                                分享數
+                                            </label>
+                                            <input
+                                                type="number"
+                                                value={avgShares}
+                                                onChange={(e) => setAvgShares(Number(e.target.value))}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                                <Bookmark className="w-4 h-4 text-yellow-500" />
+                                                儲存數
+                                            </label>
+                                            <input
+                                                type="number"
+                                                value={avgSaves}
+                                                onChange={(e) => setAvgSaves(Number(e.target.value))}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-2xl shadow-lg p-6">
+                                    <h2 className="text-xl font-bold text-gray-800 mb-4">成本與設定</h2>
+
+                                    <div className="space-y-4">
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    製作時數
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={productionHours}
+                                                    onChange={(e) => setProductionHours(Number(e.target.value))}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    時薪目標 (NT$)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={hourlyRate}
+                                                    onChange={(e) => setHourlyRate(Number(e.target.value))}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                期望利潤率: {profitMargin}%
+                                            </label>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="200"
+                                                step="5"
+                                                value={profitMargin}
+                                                onChange={(e) => setProfitMargin(Number(e.target.value))}
+                                                className="w-full h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer"
+                                            />
+                                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                                <span>0%</span>
+                                                <span>200%</span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                產業類型
+                                            </label>
+                                            <select
+                                                value={industry}
+                                                onChange={(e) => setIndustry(e.target.value)}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                            >
+                                                {Object.entries(industryCPM).map(([key, val]) => (
+                                                    <option key={key} value={key}>{val.name} (加成 {val.multiplier}x)</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                內容類型
+                                            </label>
+                                            <select
+                                                value={contentType}
+                                                onChange={(e) => setContentType(e.target.value)}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                            >
+                                                {Object.entries(contentMultiplier).map(([key, val]) => (
+                                                    <option key={key} value={key}>{val.name} ({val.multiplier}x)</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-2xl shadow-lg p-6">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Clock className="w-5 h-5 text-blue-600" />
+                                        <h2 className="text-xl font-bold text-gray-800">授權設定</h2>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                廣告主授權期限: {authorizationWeeks > 52 ? '永久授權' : `${authorizationWeeks} 週`}
+                                                {authorizationWeeks > 0 && authorizationWeeks <= 52 && (
+                                                    <span className="text-xs text-gray-500 ml-2">
+                                                        (約 {Math.round(authorizationWeeks / 4.33)} 個月)
+                                                    </span>
+                                                )}
+                                            </label>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="60"
+                                                step="1"
+                                                value={authorizationWeeks}
+                                                onChange={(e) => setAuthorizationWeeks(Number(e.target.value))}
+                                                className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+                                            />
+                                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                                <span>不授權</span>
+                                                <span>52週(12個月)</span>
+                                                <span>永久</span>
+                                            </div>
+                                            {authorizationWeeks > 52 && (
+                                                <div className="mt-2 p-2 bg-yellow-50 rounded text-xs text-yellow-800">
+                                                    ⚠️ 超過 52 週視為永久授權，費用為基礎價的 2 倍
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {authorizationWeeks > 0 && authorizationWeeks <= 52 && (
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    每週授權費 (NT$)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={weeklyAuthFee}
+                                                    onChange={(e) => setWeeklyAuthFee(Number(e.target.value))}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    placeholder="1000"
+                                                />
+                                            </div>
+                                        )}
+
+                                        <div className="border-t pt-4">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                                    <FileImage className="w-4 h-4 text-green-600" />
+                                                    原素材授權 (重製)
+                                                </label>
+                                                <button
+                                                    onClick={() => setMaterialRights(!materialRights)}
+                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${materialRights ? 'bg-green-600' : 'bg-gray-300'
+                                                        }`}
+                                                >
+                                                    <span
+                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${materialRights ? 'translate-x-6' : 'translate-x-1'
+                                                            }`}
+                                                    />
+                                                </button>
+                                            </div>
+
+                                            {materialRights && (
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        素材授權費用 (NT$)
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        value={materialRightsFee}
+                                                        onChange={(e) => setMaterialRightsFee(Number(e.target.value))}
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                                        placeholder="5000"
+                                                    />
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        包含原始照片/影片檔案供品牌重製使用
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl shadow-xl p-6 text-white">
+                                    <h2 className="text-lg font-semibold mb-2 opacity-90">總報價</h2>
+                                    <div className="text-5xl font-bold mb-4">{formatNumber(results.totalPrice)}</div>
+                                    <div className="space-y-1 text-sm opacity-90">
+                                        <div className="flex justify-between">
+                                            <span>基礎費用:</span>
+                                            <span>{formatNumber(results.finalPrice)}</span>
+                                        </div>
+                                        {results.authorizationFee > 0 && (
+                                            <div className="flex justify-between">
+                                                <span>授權費用:</span>
+                                                <span>{formatNumber(results.authorizationFee)}</span>
+                                            </div>
+                                        )}
+                                        {results.materialRightsFee > 0 && (
+                                            <div className="flex justify-between">
+                                                <span>素材授權:</span>
+                                                <span>{formatNumber(results.materialRightsFee)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="mt-3 pt-3 border-t border-white/30 text-xs opacity-80">
+                                        {contentMultiplier[contentType].name} · {industryCPM[industry].name}
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-2xl shadow-lg p-6">
+                                    <h3 className="font-bold text-gray-800 mb-4">定價計算細節</h3>
+
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-700">CPM 定價法</div>
+                                                <div className="text-xs text-gray-500">觸及人數 × CPM</div>
+                                            </div>
+                                            <div className="text-lg font-semibold text-gray-800">
+                                                {formatNumber(results.cpmPrice)}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-700">互動價值法</div>
+                                                <div className="text-xs text-gray-500">讚×10 + 留言×30 + 分享×30 + 儲存×30</div>
+                                            </div>
+                                            <div className="text-lg font-semibold text-gray-800">
+                                                {formatNumber(results.engagementPrice)}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-700">成本定價法</div>
+                                                <div className="text-xs text-gray-500">時數 × 時薪 × (1+利潤率)</div>
+                                            </div>
+                                            <div className="text-lg font-semibold text-gray-800">
+                                                {formatNumber(results.costPrice)}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-700">基準價格</div>
+                                                <div className="text-xs text-gray-500">加權平均 × 產業加成</div>
+                                            </div>
+                                            <div className="text-lg font-semibold text-gray-800">
+                                                {formatNumber(results.recommendedPrice)}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-between items-center pt-2">
+                                            <div>
+                                                <div className="text-sm font-bold text-purple-700">內容基礎價</div>
+                                                <div className="text-xs text-gray-500">基準 × 內容類型倍數</div>
+                                            </div>
+                                            <div className="text-xl font-bold text-purple-600">
+                                                {formatNumber(results.finalPrice)}
+                                            </div>
+                                        </div>
+
+                                        {(results.authorizationFee > 0 || results.materialRightsFee > 0) && (
+                                            <>
+                                                <div className="border-t my-3"></div>
+
+                                                {results.authorizationFee > 0 && (
+                                                    <div className="flex justify-between items-center pb-2">
+                                                        <div className="text-sm font-medium text-blue-700">
+                                                            {authorizationWeeks > 52 ? '永久授權費' : `授權費 (${authorizationWeeks}週)`}
+                                                        </div>
+                                                        <div className="text-lg font-semibold text-blue-600">
+                                                            {formatNumber(results.authorizationFee)}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {results.materialRightsFee > 0 && (
+                                                    <div className="flex justify-between items-center pb-2">
+                                                        <div className="text-sm font-medium text-green-700">原素材授權</div>
+                                                        <div className="text-lg font-semibold text-green-600">
+                                                            {formatNumber(results.materialRightsFee)}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div className="border-t my-3"></div>
+                                                <div className="flex justify-between items-center bg-gradient-to-r from-purple-50 to-pink-50 -mx-3 px-3 py-3 rounded-lg">
+                                                    <div className="text-sm font-bold text-purple-900">總報價</div>
+                                                    <div className="text-2xl font-bold text-purple-700">
+                                                        {formatNumber(results.totalPrice)}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="bg-blue-50 rounded-2xl shadow-lg p-6 border-2 border-blue-200">
+                                    <h3 className="font-bold text-blue-900 mb-3">💡 定價建議</h3>
+                                    <ul className="space-y-2 text-sm text-blue-800">
+                                        <li className="flex items-start">
+                                            <span className="mr-2">•</span>
+                                            <span><strong>最低價:</strong> {formatNumber(results.costPrice)} (不虧損)</span>
+                                        </li>
+                                        <li className="flex items-start">
+                                            <span className="mr-2">•</span>
+                                            <span><strong>內容費:</strong> {formatNumber(results.finalPrice)} (基礎)</span>
+                                        </li>
+                                        {results.totalPrice > results.finalPrice && (
+                                            <li className="flex items-start">
+                                                <span className="mr-2">•</span>
+                                                <span><strong>含授權:</strong> {formatNumber(results.totalPrice)} (完整報價)</span>
+                                            </li>
+                                        )}
+                                        <li className="flex items-start">
+                                            <span className="mr-2">•</span>
+                                            <span><strong>高端價:</strong> {formatNumber(Math.round(results.totalPrice * 1.5))} (獨家/急件)</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div className="bg-white rounded-2xl shadow-lg p-6">
+                                    <h3 className="font-bold text-gray-800 mb-4">📦 套餐方案建議</h3>
+
+                                    <div className="space-y-3 text-sm">
+                                        <div className="p-3 bg-gray-50 rounded-lg">
+                                            <div className="font-semibold text-gray-700 mb-1">基礎方案</div>
+                                            <div className="text-xs text-gray-600 mb-2">1 則貼文</div>
+                                            <div className="font-bold text-purple-600">{formatNumber(results.totalPrice)}</div>
+                                        </div>
+
+                                        <div className="p-3 bg-purple-50 rounded-lg border-2 border-purple-300">
+                                            <div className="font-semibold text-gray-700 mb-1">進階方案 ⭐</div>
+                                            <div className="text-xs text-gray-600 mb-2">1 Reels + 3 Story</div>
+                                            <div className="font-bold text-purple-600">
+                                                {formatNumber(Math.round(results.totalPrice * 2.5))}
+                                            </div>
+                                        </div>
+
+                                        <div className="p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-2 border-purple-400">
+                                            <div className="font-semibold text-gray-700 mb-1">整合方案 🔥</div>
+                                            <div className="text-xs text-gray-600 mb-2">2 貼文 + 1 Reels + 5 Story</div>
+                                            <div className="font-bold text-purple-600">
+                                                {formatNumber(Math.round(results.totalPrice * 4.5))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 text-center text-sm text-gray-500">
+                            <p>Made by <a href="https://www.threads.com/@burri3188" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:text-purple-700 underline">@burri3188</a></p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<KOLPricingCalculator />, document.getElementById('root'));
+    </script>
+</body>
+</html>
